@@ -10,11 +10,37 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
+use OpenApi\Annotations as OA;
 
 class UserController extends Controller
 {
     /**
      * Display a listing of users.
+     *
+     * @OA\Get(
+     *     path="/api/users",
+     *     summary="List all users",
+     *     description="Returns a paginated list of users",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(ref="#/components/schemas/User")
+     *             ),
+     *             @OA\Property(property="links", type="object"),
+     *             @OA\Property(property="meta", type="object")
+     *         )
+     *     )
+     * )
      */
     public function index(): AnonymousResourceCollection
     {
@@ -24,6 +50,29 @@ class UserController extends Controller
 
     /**
      * Store a newly created user.
+     *
+     * @OA\Post(
+     *     path="/api/users",
+     *     summary="Create a new user",
+     *     description="Creates a new user with the provided data",
+     *     tags={"Users"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationError")
+     *     )
+     * )
      */
     public function store(StoreUserRequest $request): UserResource
     {
@@ -33,6 +82,31 @@ class UserController extends Controller
 
     /**
      * Display the specified user.
+     *
+     * @OA\Get(
+     *     path="/api/users/{id}",
+     *     summary="Get user details",
+     *     description="Returns details of a specific user",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found"
+     *     )
+     * )
      */
     public function show(User $user): UserResource
     {
@@ -41,6 +115,39 @@ class UserController extends Controller
 
     /**
      * Update the specified user.
+     *
+     * @OA\Put(
+     *     path="/api/users/{id}",
+     *     summary="Update user",
+     *     description="Updates an existing user's information",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/ValidationError")
+     *     )
+     * )
      */
     public function update(UpdateUserRequest $request, User $user): UserResource
     {
@@ -50,6 +157,28 @@ class UserController extends Controller
 
     /**
      * Remove the specified user.
+     *
+     * @OA\Delete(
+     *     path="/api/users/{id}",
+     *     summary="Delete user",
+     *     description="Deletes a specific user",
+     *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=204,
+     *         description="User deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found"
+     *     )
+     * )
      */
     public function destroy(User $user): JsonResponse
     {
