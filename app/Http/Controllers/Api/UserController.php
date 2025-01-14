@@ -22,6 +22,7 @@ class UserController extends Controller
      *     summary="List all users",
      *     description="Returns a paginated list of users",
      *     tags={"Users"},
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="page",
      *         in="query",
@@ -39,6 +40,10 @@ class UserController extends Controller
      *             @OA\Property(property="links", type="object"),
      *             @OA\Property(property="meta", type="object")
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
      *     )
      * )
      */

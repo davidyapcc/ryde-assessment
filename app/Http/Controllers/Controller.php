@@ -10,7 +10,7 @@ use Illuminate\Routing\Controller as BaseController;
  * @OA\Info(
  *     version="1.0.0",
  *     title="User Management API Documentation",
- *     description="RESTful API for managing user data",
+ *     description="RESTful API for managing user data with authentication",
  *     @OA\Contact(
  *         email="davidyapcc@gmail.com",
  *         name="API Support"
@@ -24,6 +24,19 @@ use Illuminate\Routing\Controller as BaseController;
  * @OA\Server(
  *     url="http://127.0.0.1:8000",
  *     description="API Server"
+ * )
+ *
+ * @OA\SecurityScheme(
+ *     securityScheme="sanctum",
+ *     type="apiKey",
+ *     name="Authorization",
+ *     in="header",
+ *     description="Enter token in format (Bearer <token>)"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Authentication",
+ *     description="API Endpoints for user authentication"
  * )
  *
  * @OA\Tag(

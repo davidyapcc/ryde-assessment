@@ -134,8 +134,17 @@ return [
         'additional_config_url' => null,
         'security' => [],
         'securityDefinitions' => [
-            'securitySchemes' => [],
-            'security' => [],
+            'securitySchemes' => [
+                'sanctum' => [
+                    'type' => 'apiKey',
+                    'description' => 'Enter token in format (Bearer <token>)',
+                    'name' => 'Authorization',
+                    'in' => 'header',
+                ],
+            ],
+            'security' => [
+                ['sanctum' => []],
+            ],
         ],
         'generate_always' => env('L5_SWAGGER_GENERATE_ALWAYS', true),
     ],
