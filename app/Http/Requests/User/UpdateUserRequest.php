@@ -15,7 +15,7 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'dob' => ['sometimes', 'required', 'date', 'before:today'],
+            'dob' => ['sometimes', 'required', 'date_format:Y-m-d', 'before:today'],
             'address' => ['sometimes', 'required', 'string'],
             'description' => ['nullable', 'string'],
         ];
