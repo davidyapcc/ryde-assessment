@@ -30,6 +30,13 @@ class UserController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer")
      *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Items per page",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -52,8 +59,16 @@ class UserController extends Controller
      */
     public function index(): AnonymousResourceCollection
     {
-        $users = User::latest()->paginate();
-        return UserResource::collection($users);
+        try {
+            $perPage = request()->input('per_page', 15);
+            $users = User::latest()->paginate($perPage);
+            return UserResource::collection($users);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error retrieving users',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -68,8 +83,9 @@ class UserController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"name","dob","address"},
+     *             required={"name","email","dob","address"},
      *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
      *             @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
      *             @OA\Property(property="address", type="string", example="123 Main St"),
      *             @OA\Property(property="description", type="string", nullable=true, example="Some description")
@@ -96,10 +112,19 @@ class UserController extends Controller
      *     )
      * )
      */
-    public function store(StoreUserRequest $request): UserResource
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $user = User::create($request->validated());
-        return new UserResource($user);
+        try {
+            $user = User::create($request->validated());
+            return (new UserResource($user))
+                ->response()
+                ->setStatusCode(Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error creating user',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -140,7 +165,14 @@ class UserController extends Controller
      */
     public function show(User $user): UserResource
     {
-        return new UserResource($user);
+        try {
+            return new UserResource($user);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error retrieving user',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -163,6 +195,7 @@ class UserController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
      *             @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
      *             @OA\Property(property="address", type="string", example="123 Main St"),
      *             @OA\Property(property="description", type="string", nullable=true, example="Some description")
@@ -193,10 +226,17 @@ class UserController extends Controller
      *     )
      * )
      */
-    public function update(UpdateUserRequest $request, User $user): UserResource
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $user->update($request->validated());
-        return new UserResource($user);
+        try {
+            $user->update($request->validated());
+            return (new UserResource($user))->response();
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error updating user',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -234,7 +274,14 @@ class UserController extends Controller
      */
     public function destroy(User $user): JsonResponse
     {
-        $user->delete();
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        try {
+            $user->delete();
+            return response()->json(null, Response::HTTP_NO_CONTENT);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error deleting user',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

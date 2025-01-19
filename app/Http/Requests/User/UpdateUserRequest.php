@@ -15,9 +15,10 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'dob' => ['sometimes', 'required', 'date_format:Y-m-d', 'before:today'],
-            'address' => ['sometimes', 'required', 'string'],
-            'description' => ['nullable', 'string'],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $this->user->id],
+            'dob' => ['sometimes', 'required', 'date', 'before:today'],
+            'address' => ['sometimes', 'required', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:5000'],
         ];
     }
 

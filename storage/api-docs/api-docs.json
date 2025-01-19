@@ -237,6 +237,15 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -301,6 +310,7 @@
                             "schema": {
                                 "required": [
                                     "name",
+                                    "email",
                                     "dob",
                                     "address"
                                 ],
@@ -308,6 +318,11 @@
                                     "name": {
                                         "type": "string",
                                         "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
                                     },
                                     "dob": {
                                         "type": "string",
@@ -467,6 +482,11 @@
                                     "name": {
                                         "type": "string",
                                         "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
                                     },
                                     "dob": {
                                         "type": "string",
