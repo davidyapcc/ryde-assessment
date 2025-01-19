@@ -20,7 +20,7 @@ class UserController extends Controller
      * @OA\Get(
      *     path="/api/users",
      *     summary="List all users",
-     *     description="Returns a paginated list of users",
+     *     description="Returns a paginated list of users. Requires authentication.",
      *     tags={"Users"},
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
@@ -43,7 +43,10 @@ class UserController extends Controller
      *     ),
      *     @OA\Response(
      *         response=401,
-     *         description="Unauthenticated"
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
      *     )
      * )
      */
@@ -59,17 +62,31 @@ class UserController extends Controller
      * @OA\Post(
      *     path="/api/users",
      *     summary="Create a new user",
-     *     description="Creates a new user with the provided data",
+     *     description="Creates a new user with the provided data. Requires authentication.",
      *     tags={"Users"},
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *         @OA\JsonContent(
+     *             required={"name","dob","address"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+     *             @OA\Property(property="address", type="string", example="123 Main St"),
+     *             @OA\Property(property="description", type="string", nullable=true, example="Some description")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=201,
      *         description="User created successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
      *         )
      *     ),
      *     @OA\Response(
@@ -91,8 +108,9 @@ class UserController extends Controller
      * @OA\Get(
      *     path="/api/users/{id}",
      *     summary="Get user details",
-     *     description="Returns details of a specific user",
+     *     description="Returns details of a specific user. Requires authentication.",
      *     tags={"Users"},
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -105,6 +123,13 @@ class UserController extends Controller
      *         description="Successful operation",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
      *         )
      *     ),
      *     @OA\Response(
@@ -124,8 +149,9 @@ class UserController extends Controller
      * @OA\Put(
      *     path="/api/users/{id}",
      *     summary="Update user",
-     *     description="Updates an existing user's information",
+     *     description="Updates an existing user's information. Requires authentication.",
      *     tags={"Users"},
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -134,13 +160,26 @@ class UserController extends Controller
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\RequestBody(
-     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+     *             @OA\Property(property="address", type="string", example="123 Main St"),
+     *             @OA\Property(property="description", type="string", nullable=true, example="Some description")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="User updated successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="data", ref="#/components/schemas/User")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
      *         )
      *     ),
      *     @OA\Response(
@@ -166,8 +205,9 @@ class UserController extends Controller
      * @OA\Delete(
      *     path="/api/users/{id}",
      *     summary="Delete user",
-     *     description="Deletes a specific user",
+     *     description="Deletes a specific user. Requires authentication.",
      *     tags={"Users"},
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -178,6 +218,13 @@ class UserController extends Controller
      *     @OA\Response(
      *         response=204,
      *         description="User deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=404,

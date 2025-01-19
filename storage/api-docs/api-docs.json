@@ -226,7 +226,7 @@
                     "Users"
                 ],
                 "summary": "List all users",
-                "description": "Returns a paginated list of users",
+                "description": "Returns a paginated list of users. Requires authentication.",
                 "operationId": "566aed8efb436ca506e0ef51a032ecd9",
                 "parameters": [
                     {
@@ -265,7 +265,20 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthenticated"
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -279,14 +292,39 @@
                     "Users"
                 ],
                 "summary": "Create a new user",
-                "description": "Creates a new user with the provided data",
+                "description": "Creates a new user with the provided data. Requires authentication.",
                 "operationId": "be551c1d694a01c164966f58bfa77013",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/User"
+                                "required": [
+                                    "name",
+                                    "dob",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Some description",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
@@ -307,6 +345,22 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Validation error",
                         "content": {
@@ -317,7 +371,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/users/{id}": {
@@ -326,7 +385,7 @@
                     "Users"
                 ],
                 "summary": "Get user details",
-                "description": "Returns details of a specific user",
+                "description": "Returns details of a specific user. Requires authentication.",
                 "operationId": "6f51bd5fa2dddcd25e44cfa53dcbd10a",
                 "parameters": [
                     {
@@ -355,17 +414,38 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "User not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Update user",
-                "description": "Updates an existing user's information",
+                "description": "Updates an existing user's information. Requires authentication.",
                 "operationId": "070e37fc9aff78ae73860751bc990ed3",
                 "parameters": [
                     {
@@ -379,10 +459,31 @@
                     }
                 ],
                 "requestBody": {
+                    "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/User"
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Some description",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
@@ -403,6 +504,22 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "User not found"
                     },
@@ -416,14 +533,19 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
                     "Users"
                 ],
                 "summary": "Delete user",
-                "description": "Deletes a specific user",
+                "description": "Deletes a specific user. Requires authentication.",
                 "operationId": "0b4133ed462528a5e648b88ead11e929",
                 "parameters": [
                     {
@@ -440,10 +562,31 @@
                     "204": {
                         "description": "User deleted successfully"
                     },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "User not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         }
     },
