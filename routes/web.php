@@ -10,3 +10,10 @@ Route::get('docs/api-docs.json', function () {
     }
     return response()->file($filePath, ['Content-Type' => 'application/json']);
 });
+
+Route::get('/', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Welcome to the API'
+    ]);
+});
