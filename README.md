@@ -23,8 +23,8 @@ A Laravel-based RESTful API for user management with authentication using Larave
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd ryde
+git clone <git@github.com:davidyapcc/ryde-assessment.git>
+cd ryde-assessment
 ```
 
 2. Install dependencies:
@@ -91,19 +91,20 @@ app/
 ├── Http/
 │   ├── Controllers/
 │   │   └── Api/
-│   │       ├── AuthController.php
-│   │       └── UserController.php
+│   │       ├── AuthController.php    # Handles authentication (register, login, logout)
+│   │       └── UserController.php    # Handles user CRUD operations
 │   ├── Requests/
 │   │   ├── Auth/
-│   │   │   ├── LoginRequest.php
-│   │   │   └── RegisterRequest.php
-│   │   └── User/
-│   │       ├── StoreUserRequest.php
-│   │       └── UpdateUserRequest.php
+│   │   │   ├── LoginRequest.php     # Login request validation
+│   │   │   └── RegisterRequest.php  # Registration request validation
+│   │   ├── ListUsersRequest.php     # User listing and pagination validation
+│   │   ├── StoreUserRequest.php     # User creation validation
+│   │   └── UpdateUserRequest.php    # User update validation
 │   └── Resources/
-│       └── UserResource.php
+│       └── UserResource.php         # User resource transformation
 ├── Models/
-│   └── User.php
+│   └── User.php                     # User model with Sanctum authentication
+└── Providers/                       # Service providers
 ```
 
 ### Key Components
@@ -164,6 +165,11 @@ php artisan optimize:clear
 ## Testing
 
 Run the test suite:
+
 ```bash
 php artisan test
 ```
+
+## License
+
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
