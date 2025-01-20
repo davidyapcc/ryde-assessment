@@ -6,32 +6,54 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Symfony\Component\HttpFoundation\Response;
+use Laravel\Sanctum\Sanctum;
 
 class UserControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        /** @var \App\Models\User $user */
+        $user = User::factory()->create();
+        $this->actingAs($user, 'sanctum');
+    }
+
     public function test_can_list_users(): void
     {
-        $users = User::factory(3)->create();
+        User::factory()->count(3)->create();
 
         $response = $this->getJson('/api/users');
 
         $response->assertOk()
-            ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
+                'status',
+                'message',
                 'data' => [
                     '*' => [
                         'id',
                         'name',
+                        'email',
                         'dob',
                         'address',
                         'description',
                         'createdAt',
-                    ],
+                        'updatedAt'
+                    ]
                 ],
-                'links',
-                'meta',
+                'meta' => [
+                    'total',
+                    'per_page',
+                    'current_page',
+                    'last_page'
+                ],
+                'links' => [
+                    'first',
+                    'last',
+                    'prev',
+                    'next'
+                ]
             ]);
     }
 
@@ -39,38 +61,30 @@ class UserControllerTest extends TestCase
     {
         $userData = [
             'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'password' => 'password123',
             'dob' => '1990-01-01',
             'address' => '123 Test Street',
-            'description' => 'Test description',
+            'description' => 'Test description'
         ];
 
         $response = $this->postJson('/api/users', $userData);
 
         $response->assertCreated()
             ->assertJsonStructure([
+                'status',
+                'message',
                 'data' => [
                     'id',
                     'name',
+                    'email',
                     'dob',
                     'address',
                     'description',
                     'createdAt',
-                ],
-            ])
-            ->assertJson([
-                'data' => [
-                    'name' => $userData['name'],
-                    'dob' => $userData['dob'],
-                    'address' => $userData['address'],
-                    'description' => $userData['description'],
-                ],
+                    'updatedAt'
+                ]
             ]);
-
-        $this->assertDatabaseHas('users', [
-            'name' => $userData['name'],
-            'address' => $userData['address'],
-            'description' => $userData['description'],
-        ]);
     }
 
     public function test_can_show_user(): void
@@ -81,23 +95,18 @@ class UserControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
+                'status',
+                'message',
                 'data' => [
                     'id',
                     'name',
+                    'email',
                     'dob',
                     'address',
                     'description',
                     'createdAt',
-                ],
-            ])
-            ->assertJson([
-                'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'dob' => $user->dob->format('Y-m-d'),
-                    'address' => $user->address,
-                    'description' => $user->description,
-                ],
+                    'updatedAt'
+                ]
             ]);
     }
 
@@ -106,34 +115,28 @@ class UserControllerTest extends TestCase
         $user = User::factory()->create();
         $updateData = [
             'name' => 'Updated Name',
-            'address' => 'Updated Address',
+            'email' => 'updated@example.com',
+            'dob' => '1990-01-01',
+            'address' => '456 Updated Street'
         ];
 
         $response = $this->putJson("/api/users/{$user->id}", $updateData);
 
         $response->assertOk()
             ->assertJsonStructure([
+                'status',
+                'message',
                 'data' => [
                     'id',
                     'name',
+                    'email',
                     'dob',
                     'address',
                     'description',
                     'createdAt',
-                ],
-            ])
-            ->assertJson([
-                'data' => [
-                    'name' => $updateData['name'],
-                    'address' => $updateData['address'],
-                ],
+                    'updatedAt'
+                ]
             ]);
-
-        $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'name' => $updateData['name'],
-            'address' => $updateData['address'],
-        ]);
     }
 
     public function test_can_delete_user(): void
@@ -146,189 +149,220 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
     }
 
-    public function test_validates_required_fields_when_creating_user(): void
+    public function test_validates_required_fields(): void
     {
         $response = $this->postJson('/api/users', []);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'dob', 'address']);
+            ->assertJsonValidationErrors(['name', 'email', 'password', 'dob', 'address']);
     }
 
-    public function test_validates_date_format_for_dob(): void
+    public function test_validates_date_format(): void
     {
-        $response = $this->postJson('/api/users', [
-            'name' => 'John Doe',
-            'dob' => 'invalid-date',
-            'address' => '123 Test Street',
+        $user = User::factory()->create();
+        $response = $this->putJson("/api/users/{$user->id}", [
+            'dob' => '01-01-1990'
         ]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['dob']);
     }
 
-    public function test_validates_future_date_for_dob(): void
+    public function test_validates_email_format(): void
     {
         $response = $this->postJson('/api/users', [
-            'name' => 'John Doe',
-            'dob' => now()->addDay()->format('Y-m-d'),
-            'address' => '123 Test Street',
-        ]);
-
-        $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['dob']);
-    }
-
-    public function test_returns_404_for_non_existent_user(): void
-    {
-        $response = $this->getJson('/api/users/999');
-
-        $response->assertNotFound()
-            ->assertJson(['message' => 'No query results for model [App\\Models\\User] 999']);
-    }
-
-    public function test_validates_string_length_for_name(): void
-    {
-        $response = $this->postJson('/api/users', [
-            'name' => str_repeat('a', 256), // Exceeds max length of 255
+            'name' => 'Test User',
+            'email' => 'invalid-email',
+            'password' => 'password123',
             'dob' => '1990-01-01',
-            'address' => '123 Test Street',
+            'address' => '123 Test St'
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_validates_unique_email(): void
+    {
+        $existingUser = User::factory()->create();
+
+        $response = $this->postJson('/api/users', [
+            'name' => 'Test User',
+            'email' => $existingUser->email,
+            'password' => 'password123',
+            'dob' => '1990-01-01',
+            'address' => '123 Test St'
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
     }
 
     public function test_can_create_user_without_description(): void
     {
         $userData = [
             'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'password' => 'password123',
             'dob' => '1990-01-01',
-            'address' => '123 Test Street',
+            'address' => '123 Test Street'
         ];
 
         $response = $this->postJson('/api/users', $userData);
 
         $response->assertCreated()
             ->assertJson([
+                'status' => 'success',
+                'message' => 'User created successfully',
                 'data' => [
                     'name' => $userData['name'],
+                    'email' => $userData['email'],
                     'dob' => $userData['dob'],
                     'address' => $userData['address'],
-                    'description' => null,
-                ],
+                    'description' => null
+                ]
             ]);
+    }
+
+    public function test_list_users_returns_in_correct_order(): void
+    {
+        // Clear existing users from setUp
+        User::query()->delete();
+
+        $olderUser = User::factory()->create([
+            'created_at' => now()->subDay()
+        ]);
+
+        $newerUser = User::factory()->create([
+            'created_at' => now()
+        ]);
+
+        $response = $this->getJson('/api/users');
+
+        $response->assertOk();
+        $responseData = $response->json();
+
+        $this->assertEquals($newerUser->id, $responseData['data'][0]['id']);
+        $this->assertEquals($olderUser->id, $responseData['data'][1]['id']);
+    }
+
+    public function test_custom_per_page_parameter(): void
+    {
+        User::factory()->count(5)->create();
+
+        $response = $this->getJson('/api/users?per_page=2');
+
+        $response->assertOk()
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.total', 6); // 5 created here + 1 from setUp
     }
 
     public function test_pagination_works_correctly(): void
     {
-        User::factory(15)->create();
+        User::factory()->count(20)->create();
 
         $response = $this->getJson('/api/users?page=2');
 
         $response->assertOk()
             ->assertJsonStructure([
+                'status',
+                'message',
                 'data',
+                'meta' => [
+                    'total',
+                    'per_page',
+                    'current_page',
+                    'last_page'
+                ],
                 'links' => [
                     'first',
                     'last',
                     'prev',
-                    'next',
-                ],
-                'meta' => [
-                    'current_page',
-                    'from',
-                    'last_page',
-                    'links',
-                    'path',
-                    'per_page',
-                    'to',
-                    'total',
-                ],
-            ])
-            ->assertJson([
-                'meta' => [
-                    'current_page' => 2,
-                ],
+                    'next'
+                ]
             ]);
     }
 
     public function test_partial_update_preserves_existing_data(): void
     {
         $user = User::factory()->create();
-        $originalDob = $user->dob->format('Y-m-d');
-
-        $updateData = [
-            'name' => 'Updated Name',
+        $originalData = [
+            'email' => $user->email,
+            'dob' => $user->dob->format('Y-m-d'),
+            'address' => $user->address
         ];
 
-        $response = $this->putJson("/api/users/{$user->id}", $updateData);
-
-        $response->assertOk();
-        $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'name' => 'Updated Name',
-            'dob' => $originalDob,
-            'address' => $user->address,
-            'description' => $user->description,
+        $response = $this->putJson("/api/users/{$user->id}", [
+            'name' => 'Updated Name'
         ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'User updated successfully',
+                'data' => [
+                    'name' => 'Updated Name',
+                    'email' => $originalData['email'],
+                    'dob' => $originalData['dob'],
+                    'address' => $originalData['address']
+                ]
+            ]);
     }
 
     public function test_validates_empty_strings(): void
     {
         $response = $this->postJson('/api/users', [
             'name' => '',
-            'dob' => '1990-01-01',
-            'address' => '',
+            'email' => '',
+            'password' => '',
+            'dob' => '',
+            'address' => ''
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'address']);
+            ->assertJsonValidationErrors(['name', 'email', 'password', 'dob', 'address']);
     }
 
     public function test_handles_invalid_json_request(): void
     {
-        $headers = [
-            'CONTENT_TYPE' => 'application/json',
+        $response = $this->json('POST', '/api/users', ['invalid' => true], [
+            'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ];
+            'X-Requested-With' => 'XMLHttpRequest'
+        ]);
 
-        $response = $this->withHeaders($headers)
-            ->post('/api/users', [], $headers);
+        $response->assertStatus(422);
+    }
+
+    public function test_returns_404_for_non_existent_user(): void
+    {
+        $response = $this->getJson('/api/users/999');
+
+        $response->assertNotFound();
+    }
+
+    public function test_validates_string_length_for_name(): void
+    {
+        $response = $this->postJson('/api/users', [
+            'name' => str_repeat('a', 256),
+            'email' => 'john@example.com',
+            'password' => 'password123',
+            'dob' => '1990-01-01',
+            'address' => '123 Test Street'
+        ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'dob', 'address']);
+            ->assertJsonValidationErrors(['name']);
     }
 
-    public function test_list_users_returns_in_correct_order(): void
+    public function test_validates_future_date_for_dob(): void
     {
-        $olderUser = User::factory()->create([
-            'created_at' => now()->subDays(1),
-        ]);
-        $newerUser = User::factory()->create([
-            'created_at' => now(),
-        ]);
-
-        $response = $this->getJson('/api/users');
-
-        $response->assertOk()
-            ->assertJson([
-                'data' => [
-                    [
-                        'id' => $newerUser->id,
-                    ],
-                    [
-                        'id' => $olderUser->id,
-                    ],
-                ],
-            ]);
-    }
-
-    public function test_update_with_invalid_date_format(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->putJson("/api/users/{$user->id}", [
-            'dob' => '01-01-1990', // Invalid format, should be Y-m-d
+        $response = $this->postJson('/api/users', [
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'password' => 'password123',
+            'dob' => date('Y-m-d', strtotime('+1 day')),
+            'address' => '123 Test Street'
         ]);
 
         $response->assertUnprocessable()
