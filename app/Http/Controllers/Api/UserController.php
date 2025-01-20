@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
 use OpenApi\Annotations as OA;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserController extends Controller
 {
@@ -57,14 +58,40 @@ class UserController extends Controller
      *     )
      * )
      */
-    public function index(): AnonymousResourceCollection
+    public function index(): JsonResponse
     {
         try {
             $perPage = request()->input('per_page', 15);
             $users = User::latest()->paginate($perPage);
-            return UserResource::collection($users);
+
+            if ($users->isEmpty()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'No users found',
+                    'data' => [],
+                    'meta' => [
+                        'total' => 0,
+                        'per_page' => $perPage,
+                        'current_page' => 1,
+                        'last_page' => 1,
+                    ]
+                ], Response::HTTP_OK);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Users retrieved successfully',
+                'data' => UserResource::collection($users),
+                'meta' => [
+                    'total' => $users->total(),
+                    'per_page' => $users->perPage(),
+                    'current_page' => $users->currentPage(),
+                    'last_page' => $users->lastPage(),
+                ]
+            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Error retrieving users',
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -115,12 +142,27 @@ class UserController extends Controller
     public function store(StoreUserRequest $request): JsonResponse
     {
         try {
+            // Check for duplicate email
+            if (User::where('email', $request->email)->exists()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => [
+                        'email' => ['The email has already been taken.']
+                    ]
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
             $user = User::create($request->validated());
-            return (new UserResource($user))
-                ->response()
-                ->setStatusCode(Response::HTTP_CREATED);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User created successfully',
+                'data' => new UserResource($user)
+            ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Error creating user',
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -163,12 +205,29 @@ class UserController extends Controller
      *     )
      * )
      */
-    public function show(User $user): UserResource
+    public function show(User $user): JsonResponse
     {
         try {
-            return new UserResource($user);
+            if (!$user->exists) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not found'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User retrieved successfully',
+                'data' => new UserResource($user)
+            ], Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Error retrieving user',
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -229,10 +288,42 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
         try {
+            if (!$user->exists) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not found'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            // Check for duplicate email, excluding current user
+            if (User::where('email', $request->email)
+                ->where('id', '!=', $user->id)
+                ->exists()
+            ) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => [
+                        'email' => ['The email has already been taken.']
+                    ]
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
             $user->update($request->validated());
-            return (new UserResource($user))->response();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User updated successfully',
+                'data' => new UserResource($user)
+            ], Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Error updating user',
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -275,10 +366,27 @@ class UserController extends Controller
     public function destroy(User $user): JsonResponse
     {
         try {
+            if (!$user->exists) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not found'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
             $user->delete();
-            return response()->json(null, Response::HTTP_NO_CONTENT);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User deleted successfully'
+            ], Response::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Error deleting user',
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
